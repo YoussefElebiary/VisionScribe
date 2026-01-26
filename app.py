@@ -5,7 +5,7 @@ import tensorflow as tf
 from tensorflow.keras.applications.inception_v3 import InceptionV3
 from tensorflow.keras.preprocessing.sequence import pad_sequences
 from tensorflow.keras.models import Model
-from tensorflow.keras.layers import Input, Dense, LSTM, Embedding, add
+from tensorflow.keras.layers import Input, Dense, LSTM, Embedding, add, Bidirectional
 from tensorflow.keras.layers import Flatten, Dropout, BatchNormalization
 import pickle
 from PIL import Image
@@ -53,9 +53,11 @@ def build_model(vocab_size, max_caption_length, cnn_output_dim):
 
     input_caption = Input(shape=(max_caption_length,), name='Sequence_Input')
     se1 = Embedding(vocab_size, 256, mask_zero=True)(input_caption)
-    se2 = LSTM(256)(se1)
 
-    decoder1 = add([fe3, se2])
+    se2 = Bidirectional(LSTM(128, return_sequences=True))(se1)
+    se3 = Bidirectional(LSTM(128))(se2)
+
+    decoder1 = add([fe3, se3])
     decoder2 = Dense(256, activation='relu')(decoder1)
     outputs = Dense(vocab_size, activation='softmax', name='Output_Layer')(decoder2)
 
