@@ -64,7 +64,7 @@ def build_model(vocab_size, max_caption_length, cnn_output_dim):
     model = Model(inputs=[input_image, input_caption], outputs=outputs)
     return model
 
-def beam_search_generator(model, image_features, K_beams=3, log=False):
+def beam_search_generator(model, image_features, K_beams=3):
     start = [TOKENIZER.word_index['start']]
     start_word = [[start, 0.0]]
     for _ in range(25):
@@ -76,7 +76,7 @@ def beam_search_generator(model, image_features, K_beams=3, log=False):
             for w in word_preds:
                 next_cap, prob = s[0][:], s[1]
                 next_cap.append(w)
-                prob += np.log(preds[0][w]) if log else preds[0][w]
+                prob += np.log(preds[0][w] + 1e-6)
                 temp.append([next_cap, prob])
         start_word = sorted(temp, key=lambda l: l[1], reverse=True)[:K_beams]
 
@@ -133,7 +133,7 @@ def predict():
         processed_image = preprocess_image(image_file)
         features = inception_v3_model.predict(processed_image)
         
-        caption = beam_search_generator(MODEL, features, K_beams=3, log=True)
+        caption = beam_search_generator(MODEL, features, K_beams=3)
         return jsonify({"caption": caption.capitalize()}), 200
     except Exception as e:
         print(str(e))
